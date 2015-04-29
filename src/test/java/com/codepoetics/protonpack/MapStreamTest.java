@@ -8,9 +8,12 @@ package com.codepoetics.protonpack;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.codepoetics.protonpack.maps.MapStream;
 import org.junit.Before;
@@ -40,7 +43,7 @@ public class MapStreamTest {
     
     @Test
     public void testMapEntries() {
-        Map<String, Integer> map = mapStream.mapEntries(x -> x.concat(" Doe"), i -> i%2).collect();
+        Map<String, Integer> map = mapStream.mapEntries(x -> x.concat(" Doe"), i -> i % 2).collect();
         assertEquals(Integer.valueOf(1), map.get("John Doe"));
         assertEquals(Integer.valueOf(0), map.get("Alice Doe"));
     }
@@ -75,5 +78,35 @@ public class MapStreamTest {
         Map<String, Integer> mapReversed = MapStream.of(map).inverseMapping().collect(Integer::sum);
         assertEquals(Integer.valueOf(4), mapReversed.get("John"));
         assertEquals(Integer.valueOf(2), mapReversed.get("Alice"));
+    }
+
+
+    @Test
+    public void testEmptyMapStream() {
+        MapStream<String, Integer> mapStream = MapStream.emptyMapStream();
+        assertEquals(0L, mapStream.count());
+    }
+
+    @Test
+    public void testCountValue() {
+
+        Map<String, Integer> map = new HashMap<>();
+        for(int i = 0; i < 100; i++) {
+            map.put(String.valueOf(i), i);
+        }
+
+        for(int i = 0; i < 100; i++) {
+            assertEquals(1L, MapStream.of(map).countValue(i));
+        }
+
+        assertEquals(11L, MapStream.of(map).countKeys(k -> k.startsWith("1")));
+        assertEquals(1L, MapStream.of(map).countKeys(k -> k.startsWith("0")));
+        assertEquals(0L, MapStream.of(map).countKeys(k -> k.startsWith("bob")));
+
+
+        assertEquals(50L, MapStream.of(map).countValues(v -> v % 2 == 0));
+        assertEquals(50L, MapStream.of(map).countValues(v -> v % 2 == 1));
+        assertEquals(10L, MapStream.of(map).countValues(v -> v < 10));
+        assertEquals(30L, MapStream.of(map).countValues(v -> v >= 20 && v < 50));
     }
 }

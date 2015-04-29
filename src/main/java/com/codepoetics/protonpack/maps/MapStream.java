@@ -24,13 +24,23 @@ import static java.util.stream.Collectors.*;
 public interface MapStream<K, V> extends Stream<Entry<K, V>> {
 
     /**
+     * Construct an empty {@code MapStream<K, V>}
+     * @param <K> - the type of the map keys
+     * @param <V> - the type of the map values
+     * @return a new {@code MapStream<K, V>}
+     */
+    static <K, V> MapStream<K, V> emptyMapStream() {
+        return new DefaultMapStream<>(Stream.empty());
+    }
+
+    /**
      * Construct a {@code MapStream<K, V>} from the map
      * @param map - the map to build the stream from
      * @param <K> - the type of the map keys
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(Map<K, V> map) {
+    static <K, V> MapStream<K, V> of(Map<K, V> map) {
         return new DefaultMapStream<>(map.entrySet().stream());
     }
     
@@ -42,7 +52,7 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @return a new {@code MapStream<K, V>}
      */
     @SafeVarargs
-    public static <K, V> MapStream<K, V> ofMaps(Map<K, V>... maps) {
+    static <K, V> MapStream<K, V> ofMaps(Map<K, V>... maps) {
         return new DefaultMapStream<>(Stream.of(maps).flatMap(m -> m.entrySet().stream()));
     }
     
@@ -54,7 +64,7 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(K key, V value) {
+    static <K, V> MapStream<K, V> of(K key, V value) {
         return new DefaultMapStream<>(Stream.of(new SimpleImmutableEntry<>(key, value)));
     }  
     
@@ -68,9 +78,9 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1) {
+    static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1) {
         return new DefaultMapStream<>(Stream.of(new SimpleImmutableEntry<>(key, value),
-                                                new SimpleImmutableEntry<>(key1, value1)));
+                new SimpleImmutableEntry<>(key1, value1)));
     }  
     
     /**
@@ -85,7 +95,7 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2) {
+    static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2) {
         return new DefaultMapStream<>(Stream.of(new SimpleImmutableEntry<>(key, value),
                                                 new SimpleImmutableEntry<>(key1, value1),
                                                 new SimpleImmutableEntry<>(key2, value2)));
@@ -105,7 +115,7 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2, K key3, V value3) {
+    static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2, K key3, V value3) {
         return new DefaultMapStream<>(Stream.of(new SimpleImmutableEntry<>(key, value),
                                                 new SimpleImmutableEntry<>(key1, value1),
                                                 new SimpleImmutableEntry<>(key2, value2),
@@ -128,12 +138,12 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
      * @param <V> - the type of the map values
      * @return a new {@code MapStream<K, V>}
      */
-    public static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2, K key3, V value3,  K key4, V value4) {
+    static <K, V> MapStream<K, V> of(K key, V value, K key1, V value1, K key2, V value2, K key3, V value3,  K key4, V value4) {
         return new DefaultMapStream<>(Stream.of(new SimpleImmutableEntry<>(key, value),
-                                                new SimpleImmutableEntry<>(key1, value1),
-                                                new SimpleImmutableEntry<>(key2, value2),
-                                                new SimpleImmutableEntry<>(key3, value3),
-                                                new SimpleImmutableEntry<>(key4, value4)));
+                new SimpleImmutableEntry<>(key1, value1),
+                new SimpleImmutableEntry<>(key2, value2),
+                new SimpleImmutableEntry<>(key3, value3),
+                new SimpleImmutableEntry<>(key4, value4)));
     }   
     
     /**
@@ -215,7 +225,35 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
     default MapStream<V, K> inverseMapping() {
         return new DefaultMapStream<>(map(e -> new SimpleImmutableEntry<>(e.getValue(), e.getKey())));
     }
-    
+
+    /**
+     * Count the frequency of the keys in the MapStream
+     * @param predicate the predicate to test the keys with
+     * @return the frequency of the keys that satisfy the predicate
+     */
+    default long countKeys(Predicate<? super K> predicate) {
+        return filter(e -> predicate.test(e.getKey())).count();
+    }
+
+
+    /**
+     * Count the frequency of the value in the MapStream
+     * @param value the value to be compared with, according to {@link Object#equals(Object)}
+     * @return the frequency of the value value
+     */
+    default long countValue(V value) {
+        return countValues(value::equals);
+    }
+
+    /**
+     * Count the frequency of the values in the MapStream
+     * @param predicate the predicate to test the values with
+     * @return the frequency of the values that satisfy the predicate
+     */
+    default long countValues(Predicate<? super V> predicate) {
+        return filter(e -> predicate.test(e.getValue())).count();
+    }
+
     @Override
     MapStream<K, V> limit(long n);
     
@@ -248,4 +286,8 @@ public interface MapStream<K, V> extends Stream<Entry<K, V>> {
     
     @Override
     MapStream<K, V> distinct();
+
+    MapStream<K, V> addEntry(Entry<K, V> entry);
+
+    MapStream<K, V> addEntry(K key, V value);
 }

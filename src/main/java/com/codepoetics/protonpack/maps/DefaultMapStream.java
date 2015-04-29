@@ -5,11 +5,9 @@
 
 package com.codepoetics.protonpack.maps;
 
-import java.util.Comparator;
-import java.util.Iterator;
+import java.util.*;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Spliterator;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -130,6 +128,16 @@ final class DefaultMapStream<K, V> implements MapStream<K, V> {
     @Override
     public MapStream<K, V> distinct() {
         return new DefaultMapStream<>(delegate.distinct());
+    }
+
+    @Override
+    public MapStream<K, V> addEntry(Entry<K, V> entry) {
+        return new DefaultMapStream<>(Stream.concat(delegate, Stream.of(entry)));
+    }
+
+    @Override
+    public MapStream<K, V> addEntry(K key, V value) {
+        return addEntry(new SimpleImmutableEntry<K, V>(key, value));
     }
 
     @Override
